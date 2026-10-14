@@ -24,3 +24,15 @@ test('el lote manipulado termina con código 1 y señala la huella', () => {
 test('sin argumentos es un error de uso (código 2)', () => {
   assert.equal(run().status, 2)
 })
+
+test('factura PDF correcta: QR leído, medido y coherente con el registro', () => {
+  const r = run(ej('lote-correcto.xml'), '--qr', ej('factura-correcta.pdf'), '--json')
+  assert.equal(r.status, 0, r.stdout + r.stderr)
+})
+
+test('factura PDF incorrecta: tamaño, rótulos, nivel M, posición e importe', () => {
+  const r = run(ej('lote-correcto.xml'), '--qr', ej('factura-incorrecta.pdf'), '--json')
+  assert.equal(r.status, 1)
+  const reglas = new Set(JSON.parse(r.stdout).hallazgos.map((h) => h.regla))
+  for (const x of ['QR-006', 'QR-008', 'QR-010', 'QR-013', 'QR-014', 'QR-015']) assert.ok(reglas.has(x), `falta ${x}`)
+})

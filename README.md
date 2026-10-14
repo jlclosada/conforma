@@ -12,11 +12,13 @@ Verifica en local, sin enviar nada a ningún servidor, los registros de facturac
 - **Encadenamiento**: enlace con el registro anterior, reinicios de cadena, fechas que retroceden, altas duplicadas y anulaciones.
 - **Formatos**: NIF (con letra o dígito de control), número de serie, fechas, importes, tipo de factura y tipo de huella.
 - **Esquemas XSD oficiales** de la AEAT (incluidos en el paquete, validación local con libxml2 en WebAssembly).
-- **Código QR**: URL del servicio de cotejo, parámetros, codificación, los códigos de error de la AEAT (1001–2006), coherencia con el registro y nivel de corrección M (leyendo el QR de una imagen).
+- **Código QR**: URL del servicio de cotejo, parámetros, codificación, los códigos de error de la AEAT (1001–2006), coherencia con el registro y nivel de corrección M.
+- **QR en la factura PDF**: dibuja la factura en memoria, localiza el QR y comprueba el tamaño (30–40 mm), el margen en blanco (2 mm, recomendado 6), que esté en la primera página y sea el primer QR, la posición, y los textos «QR tributario:» encima y «VERI*FACTU» debajo con letra no menor que el resto.
 
 ```bash
 pnpm install && pnpm build
 node packages/cli/dist/cli.js examples/lote-correcto.xml
+node packages/cli/dist/cli.js examples/lote-correcto.xml --qr examples/factura-incorrecta.pdf
 node packages/cli/dist/cli.js examples/lote-manipulado.xml --qr factura.png --entorno pruebas
 ```
 
@@ -36,7 +38,8 @@ Requiere Node 22 y pnpm.
 ```bash
 pnpm install
 pnpm build
-pnpm test      # vectores oficiales, lotes de ejemplo, QR, NIF, XSD y CLI
+pnpm test      # vectores oficiales, lotes de ejemplo, QR, NIF, XSD, maquetación y CLI
+node scripts/generar-facturas-ejemplo.mjs   # regenera las facturas PDF de ejemplo
 ```
 
 ## Fuentes oficiales

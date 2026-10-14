@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import { parseArgs } from 'node:util'
-import { analizarUrlQr, leerXml, verificar, type Hallazgo, type Registro, type RegistroAlta } from '@conforma/core'
+import { analizarMaquetacionQr, analizarUrlQr, leerXml, verificar, type Hallazgo, type Registro, type RegistroAlta } from '@conforma/core'
 import { validarXsd } from '@conforma/core/xsd'
 import { sarif, texto } from './salida.js'
 
@@ -13,7 +13,8 @@ Uso:
   verifactu-lint <ficheros.xml...> [opciones]
 
 Opciones:
-  --qr <url|imagen>   Comprueba la URL de un código QR (o la lee de una imagen PNG/JPG). Repetible.
+  --qr <url|imagen|pdf>  Comprueba el código QR: una URL, una imagen PNG/JPG o una factura en PDF
+                      (en el PDF también mide tamaño, margen, posición y textos). Repetible.
   --entorno <e>       Entorno esperado del QR: pruebas | produccion
   --no-xsd            No validar contra los esquemas XSD de la AEAT
   --info              Mostrar también los hallazgos informativos
@@ -28,6 +29,8 @@ Qué comprueba:
   · Formatos: NIF, número de serie, fechas, importes, tipo de factura, tipo de huella
   · Esquemas XSD oficiales (SuministroLR, SuministroInformacion, EventosSIF)
   · URL del QR: dominio, parámetros, codificación, códigos de error de la AEAT y coherencia con el registro
+  · QR en la factura PDF: 30–40 mm, nivel M, margen en blanco, primera página, posición,
+    «QR tributario:» encima y «VERI*FACTU» debajo
 
 Código de salida: 0 si no hay hallazgos críticos ni altos; 1 si los hay; 2 si hay un error de uso.`
 
@@ -74,7 +77,15 @@ async function main() {
 
   for (const q of o.qr ?? []) {
     let urls: { texto: string; nivelCorreccion?: string }[] = [{ texto: q }]
-    if (!/^https?:\/\//i.test(q) && ['.png', '.jpg', '.jpeg', '.webp'].includes(extname(q).toLowerCase())) {
+    if (!/^https?:\/\//i.test(q) && extname(q).toLowerCase() === '.pdf') {
+      const { analizarPdf } = await import('./pdf.js')
+      const res = await analizarPdf(q)
+      if (!res) { extra.push({ regla: 'QR-000', severidad: 'critica', mensaje: `No se ha encontrado el QR tributario en las primeras páginas de ${basename(q)}` }); continue }
+      urls = [{ texto: res.url, nivelCorreccion: res.nivelCorreccion }]
+      const etiqueta = `PDF ${basename(q)}`
+      for (const h of analizarMaquetacionQr(res.maquetacion)) extra.push({ ...h, mensaje: `[${etiqueta}] ${h.mensaje}` })
+      if (res.nivelCorreccion && res.nivelCorreccion !== 'M') extra.push({ regla: 'QR-008', severidad: 'alta', mensaje: `[${etiqueta}] El QR usa el nivel de corrección ${res.nivelCorreccion}; la orden exige el nivel M`, referencia: 'Orden HAC/1177/2024, art. 21.1' })
+    } else if (!/^https?:\/\//i.test(q) && ['.png', '.jpg', '.jpeg', '.webp'].includes(extname(q).toLowerCase())) {
       const { leerQrDeImagen } = await import('./qrimagen.js')
       urls = await leerQrDeImagen(q)
       if (!urls.length) { extra.push({ regla: 'QR-000', severidad: 'alta', mensaje: `No se ha encontrado ningún código QR legible en ${basename(q)}` }); continue }
