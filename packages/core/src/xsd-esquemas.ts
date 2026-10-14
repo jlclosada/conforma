@@ -19,7 +19,7 @@ export function esquemaPara(raiz: string | undefined): string | null {
  */
 export async function validarXsdConEsquemas(xml: string, raiz: string | undefined, esquemas: FicheroEsquema[], fichero = 'documento.xml'): Promise<Hallazgo[]> {
   const principal = esquemaPara(raiz)
-  if (!principal) return [{ regla: 'XSD-000', severidad: 'info', mensaje: `No se valida contra XSD: raíz «${raiz ?? '?'}» no reconocida (se esperaba RegFactuSistemaFacturacion, RegistroAlta, RegistroAnulacion o RegistroEvento)` }]
+  if (!principal) return [{ regla: 'XSD-000', severidad: 'media', noComprobado: true, mensaje: `No se valida contra XSD: raíz «${raiz ?? '?'}» no reconocida (se esperaba RegFactuSistemaFacturacion, RegistroAlta, RegistroAnulacion o RegistroEvento)` }]
   const schema = esquemas.find((s) => s.fileName === principal)
   if (!schema) throw new Error(`Falta el esquema ${principal}`)
   const res = await validateXML({ xml: [{ fileName: 'documento.xml', contents: xml }], schema: [schema], preload: esquemas.filter((s) => s !== schema) })

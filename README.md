@@ -22,7 +22,7 @@ node packages/cli/dist/cli.js examples/lote-correcto.xml --qr examples/factura-i
 node packages/cli/dist/cli.js examples/lote-manipulado.xml --qr factura.png --entorno pruebas
 ```
 
-Salida legible, `--json` o `--sarif` (para GitHub code scanning). Código de salida `1` si hay hallazgos críticos o altos: se puede usar en integración continua.
+Salida legible, `--json` o `--sarif` (para GitHub code scanning). El veredicto tiene tres estados y un código de salida para cada uno, pensado para integración continua: `0` aprobado, `1` falla (hallazgos críticos o altos), `3` no comprobado (sin fallos, pero algo no se pudo verificar, p. ej. con `--no-xsd`). El `2` es un error de uso.
 
 ## Web: verifactu-lint en el navegador
 

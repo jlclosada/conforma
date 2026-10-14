@@ -1,8 +1,10 @@
 import pc from 'picocolors'
-import type { Hallazgo, Informe, Severidad } from '@conforma/core'
+import { AREAS, type Area, type EstadoArea, type Hallazgo, type Informe, type Severidad } from '@conforma/core'
 
 const ICONO: Record<Severidad, string> = { critica: pc.red('✖'), alta: pc.red('●'), media: pc.yellow('▲'), info: pc.blue('ℹ') }
 const NOMBRE: Record<Severidad, string> = { critica: pc.red('CRÍTICO'), alta: pc.red('ALTO'), media: pc.yellow('MEDIO'), info: pc.blue('INFO') }
+const AREA: Record<Area, string> = { formato: 'formatos', huella: 'huella', cadena: 'cadena', xsd: 'XSD', qr: 'QR', maquetacion: 'maquetación' }
+const ESTADO: Record<EstadoArea, (t: string) => string> = { ok: (t) => pc.green(`✔ ${t}`), falla: (t) => pc.red(`✖ ${t}`), no_comprobado: (t) => pc.yellow(`? ${t}`), sin_datos: (t) => pc.dim(`· ${t}`) }
 
 export function texto(informe: Informe, opciones: { info: boolean; ficheros: string[] }): string {
   const l: string[] = []
@@ -22,7 +24,12 @@ export function texto(informe: Informe, opciones: { info: boolean; ficheros: str
   }
   if (visibles.length) l.push('')
   const resumen = `${s.critica} críticos · ${s.alta} altos · ${s.media} medios · ${s.info} informativos`
-  l.push(informe.correcto ? pc.green(pc.bold(`✔ Sin errores críticos ni altos  (${resumen})`)) : pc.red(pc.bold(`✖ No cumple  (${resumen})`)))
+  l.push(pc.dim('Cobertura: ') + AREAS.map((a) => ESTADO[informe.cobertura[a]](AREA[a])).join('  '))
+  l.push(
+    informe.veredicto === 'aprobado' ? pc.green(pc.bold(`✔ APROBADO  (${resumen})`))
+    : informe.veredicto === 'falla' ? pc.red(pc.bold(`✖ FALLA  (${resumen})`))
+    : pc.yellow(pc.bold(`? NO COMPROBADO: sin fallos, pero hay comprobaciones que no se han podido hacer  (${resumen})`)),
+  )
   if (!opciones.info && s.info) l.push(pc.dim('  Usa --info para ver también los hallazgos informativos.'))
   l.push(pc.dim('  Verificación técnica automática: no sustituye a una revisión fiscal ni es una homologación de la AEAT.'))
   return l.join('\n')

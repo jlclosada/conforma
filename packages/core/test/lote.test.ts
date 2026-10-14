@@ -14,7 +14,19 @@ describe('lectura y verificación de lotes', () => {
   it('el lote oficial no tiene hallazgos críticos ni altos', () => {
     const informe = verificar(leerXml(ej('lote-correcto.xml')).registros)
     expect(informe.hallazgos.filter((h) => h.severidad !== 'info')).toEqual([])
-    expect(informe.correcto).toBe(true)
+    // sin XSD no se puede aprobar: el veredicto honesto es «no comprobado»
+    expect(informe.veredicto).toBe('no_comprobado')
+    expect(informe.cobertura).toMatchObject({ huella: 'ok', cadena: 'ok', formato: 'ok', xsd: 'no_comprobado', qr: 'sin_datos' })
+    expect(verificar(leerXml(ej('lote-correcto.xml')).registros, [], { comprobadas: ['xsd'] }).veredicto).toBe('aprobado')
+  })
+  it('un XSD que no se pudo ejecutar nunca da «aprobado»', () => {
+    const { registros } = leerXml(ej('lote-correcto.xml'))
+    const informe = verificar(registros, [{ regla: 'XSD-000', severidad: 'media', noComprobado: true, mensaje: 'no carga' }], { comprobadas: ['xsd'] })
+    expect(informe.veredicto).toBe('no_comprobado')
+    expect(informe.cobertura.xsd).toBe('no_comprobado')
+  })
+  it('sin nada que comprobar el veredicto es «no comprobado»', () => {
+    expect(verificar([]).veredicto).toBe('no_comprobado')
   })
   it('detecta la manipulación del importe y la cadena rota', () => {
     const informe = verificar(leerXml(ej('lote-manipulado.xml')).registros)
@@ -22,7 +34,8 @@ describe('lectura y verificación de lotes', () => {
     expect(reglas).toContain('HUE-002@1') // huella de la factura manipulada
     expect(reglas).toContain('CAD-004@2') // la anulación enlaza con otra huella
     expect(reglas).toContain('HUE-002@2')
-    expect(informe.correcto).toBe(false)
+    expect(informe.veredicto).toBe('falla')
+    expect(informe.cobertura.huella).toBe('falla')
   })
   it('detecta un reinicio de cadena y fechas que retroceden', () => {
     const { registros } = leerXml(ej('lote-correcto.xml'))

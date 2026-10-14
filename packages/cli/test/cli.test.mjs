@@ -10,7 +10,15 @@ const run = (...a) => spawnSync(process.execPath, [cli, ...a], { encoding: 'utf8
 test('el lote correcto termina con código 0', () => {
   const r = run(ej('lote-correcto.xml'), '--json')
   assert.equal(r.status, 0)
-  assert.equal(JSON.parse(r.stdout).correcto, true)
+  assert.equal(JSON.parse(r.stdout).veredicto, 'aprobado')
+})
+
+test('sin XSD el veredicto es «no comprobado» (código 3), nunca «aprobado»', () => {
+  const r = run(ej('lote-correcto.xml'), '--no-xsd', '--json')
+  assert.equal(r.status, 3)
+  const inf = JSON.parse(r.stdout)
+  assert.equal(inf.veredicto, 'no_comprobado')
+  assert.equal(inf.cobertura.xsd, 'no_comprobado')
 })
 
 test('el lote manipulado termina con código 1 y señala la huella', () => {

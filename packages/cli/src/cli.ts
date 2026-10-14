@@ -2,7 +2,7 @@
 import { readFile } from 'node:fs/promises'
 import { basename, extname } from 'node:path'
 import { parseArgs } from 'node:util'
-import { analizarMaquetacionQr, analizarUrlQr, leerXml, verificar, type Hallazgo, type Registro, type RegistroAlta } from '@conforma/core'
+import { analizarMaquetacionQr, analizarUrlQr, leerXml, verificar, type Area, type Hallazgo, type Registro, type RegistroAlta, type Veredicto } from '@conforma/core'
 import { validarXsd } from '@conforma/core/xsd'
 import { sarif, texto } from './salida.js'
 
@@ -32,7 +32,13 @@ Qué comprueba:
   · QR en la factura PDF: 30–40 mm, nivel M, margen en blanco, primera página, posición,
     «QR tributario:» encima y «VERI*FACTU» debajo
 
-Código de salida: 0 si no hay hallazgos críticos ni altos; 1 si los hay; 2 si hay un error de uso.`
+Veredicto y código de salida:
+  0  aprobado       todo lo aportado se ha comprobado y no hay hallazgos críticos ni altos
+  1  falla          hay al menos un hallazgo crítico o alto
+  2                 error de uso
+  3  no comprobado  sin fallos, pero algo no se pudo comprobar (p. ej. --no-xsd o un XSD que no carga)`
+
+const SALIDA: Record<Veredicto, number> = { aprobado: 0, falla: 1, no_comprobado: 3 }
 
 async function main() {
   let args
@@ -62,6 +68,8 @@ async function main() {
 
   const registros: Registro[] = []
   const extra: Hallazgo[] = []
+  const comprobadas: Area[] = []
+  if (ficheros.length && !o['no-xsd']) comprobadas.push('xsd')
   for (const f of ficheros) {
     let xml: string
     try { xml = await readFile(f, 'utf8') } catch (e) { console.error(`No se puede leer ${f}: ${(e as Error).message}`); return 2 }
@@ -72,7 +80,11 @@ async function main() {
     }
     if (!lectura.registros.length) extra.push({ regla: 'XML-002', severidad: 'media', mensaje: `${basename(f)} no contiene registros de alta, anulación ni evento` })
     registros.push(...lectura.registros)
-    if (!o['no-xsd']) extra.push(...(await validarXsd(xml, lectura.raiz, f)))
+    if (!o['no-xsd']) {
+      try { extra.push(...(await validarXsd(xml, lectura.raiz, f))) } catch (e) {
+        extra.push({ regla: 'XSD-000', severidad: 'media', noComprobado: true, mensaje: `No se pudo validar ${basename(f)} contra el XSD: ${(e as Error).message}` })
+      }
+    }
   }
 
   for (const q of o.qr ?? []) {
@@ -82,6 +94,7 @@ async function main() {
       const res = await analizarPdf(q)
       if (!res) { extra.push({ regla: 'QR-000', severidad: 'critica', mensaje: `No se ha encontrado el QR tributario en las primeras páginas de ${basename(q)}` }); continue }
       urls = [{ texto: res.url, nivelCorreccion: res.nivelCorreccion }]
+      comprobadas.push('maquetacion')
       const etiqueta = `PDF ${basename(q)}`
       for (const h of analizarMaquetacionQr(res.maquetacion)) extra.push({ ...h, mensaje: `[${etiqueta}] ${h.mensaje}` })
       if (res.nivelCorreccion && res.nivelCorreccion !== 'M') extra.push({ regla: 'QR-008', severidad: 'alta', mensaje: `[${etiqueta}] El QR usa el nivel de corrección ${res.nivelCorreccion}; la orden exige el nivel M`, referencia: 'Orden HAC/1177/2024, art. 21.1' })
@@ -92,20 +105,21 @@ async function main() {
       for (const u of urls) if (u.nivelCorreccion && u.nivelCorreccion !== 'M') extra.push({ regla: 'QR-008', severidad: 'alta', mensaje: `El QR de ${basename(q)} usa el nivel de corrección ${u.nivelCorreccion}; la orden exige el nivel M`, referencia: 'Orden HAC/1177/2024, art. 21.1' })
     }
     for (const u of urls) {
+      comprobadas.push('qr')
       const numserie = new URLSearchParams(u.texto.split('?')[1] ?? '').get('numserie')?.trim()
       const registro = registros.find((r): r is RegistroAlta => r.tipo === 'alta' && r.numSerie.trim() === numserie)
       const { hallazgos } = analizarUrlQr(u.texto, { registro, entorno: o.entorno as 'pruebas' | 'produccion' | undefined })
       const etiqueta = `QR ${numserie ?? u.texto.slice(0, 60)}`
       for (const h of hallazgos) extra.push({ ...h, mensaje: `[${etiqueta}] ${h.mensaje}` })
-      if (numserie && registros.length && !registro) extra.push({ regla: 'QR-009', severidad: 'info', mensaje: `[${etiqueta}] No hay ningún registro de alta con ese número de serie en los ficheros: no se ha comprobado la coherencia` })
+      if (numserie && registros.length && !registro) extra.push({ regla: 'QR-009', severidad: 'media', noComprobado: true, mensaje: `[${etiqueta}] No hay ningún registro de alta con ese número de serie en los ficheros: no se ha comprobado la coherencia` })
     }
   }
 
-  const informe = verificar(registros, extra)
+  const informe = verificar(registros, extra, { comprobadas })
   if (o.json) console.log(JSON.stringify(informe, null, 2))
   else if (o.sarif) console.log(sarif(informe, VERSION))
   else console.log(texto(informe, { info: Boolean(o.info), ficheros }))
-  return informe.correcto ? 0 : 1
+  return SALIDA[informe.veredicto]
 }
 
 main().then((code) => { process.exitCode = code }, (e) => { console.error(e); process.exitCode = 2 })
