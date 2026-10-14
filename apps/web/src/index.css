@@ -1,9 +1,130 @@
 @import "tailwindcss";
+/* Tipografías empaquetadas con la web: ni Google Fonts ni ninguna otra petición externa */
+@import "@fontsource-variable/geist";
+@import "@fontsource-variable/geist-mono";
+@import "@fontsource/instrument-serif/400.css";
+@import "@fontsource/instrument-serif/400-italic.css";
 
-@theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+/* Paleta «papel y sello»: fondo de papel cálido, tinta casi negra, verde de sello oficial
+   y bermellón para los fallos. Los tokens cambian en modo oscuro; los componentes no. */
+:root {
+  color-scheme: light;
+  --paper: #f5f4ef;
+  --surface: #ffffff;
+  --sunken: #efede6;
+  --line: #e2dfd5;
+  --line-strong: #cfcbbf;
+  --ink: #15171b;
+  --ink-2: #3d4149;
+  --muted: #6b6f78;
+  --accent: #0b6b57;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3f1ec;
+  --ok: #13805d;
+  --ok-soft: #e4f3ec;
+  --fail: #c2361f;
+  --fail-soft: #fbe9e5;
+  --warn: #a8670f;
+  --warn-soft: #fbf0dd;
+  --info: #3756c8;
+  --info-soft: #e8edfb;
+  --grid: rgba(21, 23, 27, 0.045);
 }
 
-:root { color-scheme: light dark; }
-body { @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --paper: #0d0f12;
+    --surface: #14171c;
+    --sunken: #101216;
+    --line: #242830;
+    --line-strong: #343944;
+    --ink: #eceef1;
+    --ink-2: #c3c7cf;
+    --muted: #8d939e;
+    --accent: #3ccb9e;
+    --accent-ink: #062b22;
+    --accent-soft: #10302a;
+    --ok: #3ccb9e;
+    --ok-soft: #0f2a23;
+    --fail: #ff7a63;
+    --fail-soft: #33150f;
+    --warn: #f0b44c;
+    --warn-soft: #2e2210;
+    --info: #8ea6ff;
+    --info-soft: #161d36;
+    --grid: rgba(236, 238, 241, 0.035);
+  }
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Geist Mono Variable", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Instrument Serif", ui-serif, Georgia, serif;
+
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-sunken: var(--sunken);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-ok: var(--ok);
+  --color-ok-soft: var(--ok-soft);
+  --color-fail: var(--fail);
+  --color-fail-soft: var(--fail-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+
+  --animate-entrar: entrar 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-sello: sello 0.55s cubic-bezier(0.2, 1.4, 0.4, 1) both;
+}
+
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes sello {
+  from { opacity: 0; transform: scale(1.35) rotate(-14deg); }
+  to { opacity: 1; transform: scale(1) rotate(-8deg); }
+}
+
+html { scroll-behavior: smooth; scroll-padding-top: 5rem; }
+body {
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+::selection { background: var(--accent); color: var(--accent-ink); }
+
+/* Cuadrícula de papel milimetrado en el fondo del encabezado */
+.papel-milimetrado {
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px;
+  mask-image: linear-gradient(to bottom, black 40%, transparent);
+}
+
+.num { font-variant-numeric: tabular-nums; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
+
+/* Informe imprimible: solo el informe, legible en papel */
+.solo-imprimir { display: none; }
+@media print {
+  :root { --paper: #fff; --surface: #fff; --sunken: #f6f6f6; color-scheme: light; }
+  .no-imprimir { display: none !important; }
+  .solo-imprimir { display: block !important; }
+  .rotura { break-inside: avoid; }
+  body { font-size: 11px; }
+}
