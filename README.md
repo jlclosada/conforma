@@ -24,12 +24,22 @@ node packages/cli/dist/cli.js examples/lote-manipulado.xml --qr factura.png --en
 
 Salida legible, `--json` o `--sarif` (para GitHub code scanning). Código de salida `1` si hay hallazgos críticos o altos: se puede usar en integración continua.
 
+## Web: verifactu-lint en el navegador
+
+`apps/web` es la misma verificación en una página: arrastras los XML y la factura PDF y todo se calcula en el navegador (motor, libxml2, zxing y pdf.js en WebAssembly, sin CDN). Ningún fichero sale del equipo.
+
+```bash
+pnpm --filter @conforma/web dev     # http://localhost:5173
+pnpm --filter @conforma/web build   # estático en apps/web/dist
+```
+
 ## Paquetes
 
 | Paquete | Qué es |
 |---|---|
 | `packages/core` (`@conforma/core`) | Motor puro en TypeScript: huella, lectura de XML, reglas, QR y XSD. Funciona en Node y (salvo el XSD con ficheros locales) en el navegador. |
 | `packages/cli` (`verifactu-lint`) | Línea de comandos. |
+| `apps/web` | Página que verifica en el navegador. |
 
 ## Desarrollo
 

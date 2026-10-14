@@ -13,7 +13,12 @@
     "./xsd": {
       "types": "./dist/xsd.d.ts",
       "import": "./dist/xsd.js"
-    }
+    },
+    "./xsd-esquemas": {
+      "types": "./dist/xsd-esquemas.d.ts",
+      "import": "./dist/xsd-esquemas.js"
+    },
+    "./schemas/*": "./schemas/*"
   },
   "files": [
     "dist",
