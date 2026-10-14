@@ -1,0 +1,44 @@
+{
+  "name": "@conforma/core",
+  "version": "0.1.0",
+  "description": "Motor de verificación de registros Verifactu: huella, encadenamiento, formatos, QR y esquemas XSD de la AEAT.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./xsd": {
+      "types": "./dist/xsd.d.ts",
+      "import": "./dist/xsd.js"
+    }
+  },
+  "files": [
+    "dist",
+    "schemas"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@noble/hashes": "^2.4.0",
+    "fast-xml-parser": "^5.11.2",
+    "xmllint-wasm": "^5.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.4"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jlclosada/conforma.git",
+    "directory": "packages/core"
+  }
+}

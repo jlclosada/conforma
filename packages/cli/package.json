@@ -1,0 +1,41 @@
+{
+  "name": "verifactu-lint",
+  "version": "0.1.0",
+  "description": "Verifica registros Verifactu en local: huella, encadenamiento, formatos, esquemas XSD de la AEAT y código QR.",
+  "type": "module",
+  "bin": {
+    "verifactu-lint": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "keywords": [
+    "verifactu",
+    "aeat",
+    "facturacion",
+    "hash",
+    "qr",
+    "lint"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/cli.js",
+    "test": "node --test test/*.test.mjs"
+  },
+  "dependencies": {
+    "@conforma/core": "workspace:*",
+    "picocolors": "^1.1.1",
+    "zxing-wasm": "^3.1.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.5",
+    "typescript": "^7.0.2"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jlclosada/conforma.git",
+    "directory": "packages/cli"
+  }
+}
